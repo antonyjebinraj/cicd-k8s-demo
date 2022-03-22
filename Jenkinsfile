@@ -9,6 +9,10 @@ pipeline {
     stage('Compile') {
       steps {
         git 'https://github.com/antonyjebinraj/cicd-k8s-demo.git'
+        script{
+                def mvnHome = tool name: 'MAVEN_HOME', type: 'maven'
+                sh "${mvnHome}/bin/mvn package"
+        }
       }
     }
     stage('Building Docker Image') {
