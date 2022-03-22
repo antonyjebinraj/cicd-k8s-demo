@@ -1,6 +1,6 @@
 pipeline {
   environment {
-    registry = "jebinraj/cicd-k8s-demo"
+    registry = "jebinraj/docker"
     registryCredential = 'docker-hub-credentials'
     dockerImage = ''
   }
