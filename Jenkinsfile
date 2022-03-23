@@ -1,45 +1,33 @@
-pipeline {
-  environment {
-    registry = "jebinraj/docker"
-    registryCredential = 'docker-hub-credentials'
-    dockerImage = ''
-  }
-  agent any
-  stages {
-    stage('Compile') {
-      steps {
-        git 'https://github.com/antonyjebinraj/cicd-k8s-demo.git'
-        script{
-                def mvnHome = tool name: 'MAVEN_HOME', type: 'maven'
-                sh "${mvnHome}/bin/mvn package"
+node {
+    def app
+
+    stage('Clone repository') {
+        /* Cloning the Repository to our Workspace */
+
+        checkout scm
+    }
+
+    stage('Build image') {
+        /* This builds the actual image */
+
+        app = docker.build("anandr72/nodeapp")
+    }
+
+    stage('Test image') {
+        
+        app.inside {
+            echo "Tests passed"
         }
-      }
     }
-    stage('Building Docker Image') {
-      steps{
-        script {
-          dockerImage = docker.build registry + ":$BUILD_NUMBER"
-        }
-      }
+
+    stage('Push image') {
+        /* 
+			You would need to first register with DockerHub before you can push images to your account
+		*/
+        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub') {
+            app.push("${env.BUILD_NUMBER}")
+            app.push("latest")
+            } 
+                echo "Trying to Push Docker Build to DockerHub"
     }
-    stage('Push Image To Docker Hub') {
-      steps{
-        script {
-          /* Finally, we'll push the image with two tags:
-                   * First, the incremental build number from Jenkins
-                   * Second, the 'latest' tag.
-                   * Pushing multiple tags is cheap, as all the layers are reused. */
-          docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-              dockerImage.push("${env.BUILD_NUMBER}")
-              dockerImage.push("latest")
-          }
-        }
-      }
-    }
-    stage('Deploy to Kubernetes'){
-        steps{
-            sh 'kubectl apply -f deployment.yml'
-       }
-    }
-  }
 }
